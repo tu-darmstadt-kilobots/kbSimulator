@@ -15,8 +15,8 @@ class Kilobot:
     FRICTION = 0.2
     RESTITUTION = 0.0
 
-    LINEAR_DAMPING = 1.0
-    ANGULAR_DAMPING = 1.0
+    LINEAR_DAMPING = 0.8
+    ANGULAR_DAMPING = 0.8
 
     """
         scale_real_to_sim: scale factor to go from real world to
@@ -54,31 +54,6 @@ class Kilobot:
         raise NotImplementedError("Kilobot subclass needs to implement step")
 
     def setVelocities(self):
-        """
-        target_vel_left = self.body.GetWorldVector(
-                (0.0, 1.0 * self.scale_real_to_sim * 0.01))
-        target_vel_right = self.body.GetWorldVector(
-                (0.0, 0.8 * self.scale_real_to_sim * 0.01))
-
-        curr_vel = self.body.linearVelocity
-        curr_vel_left = self.body.GetLinearVelocityFromLocalPoint(
-                (-self.sim_radius, 0.0))
-        curr_vel_right = self.body.GetLinearVelocityFromLocalPoint(
-                (+self.sim_radius, 0.0))
-        mass = self.body.mass
-
-        self.body.ApplyForce(
-                self.body.GetWorldVector(
-                    mass * (target_vel_left - curr_vel_left)),
-                self.body.GetWorldPoint((-self.sim_radius, 0.0)),
-                True)
-        self.body.ApplyForce(
-                self.body.GetWorldVector(
-                    mass * (target_vel_right - curr_vel_right)),
-                self.body.GetWorldPoint((+self.sim_radius, 0.0)),
-                True)
-        """
-
         factor_left = self.value_motor_left / 255.0
         factor_right = self.value_motor_right / 255.0
 
