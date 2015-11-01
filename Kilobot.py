@@ -1,15 +1,15 @@
 from Box2D.b2 import*
-
 from pygame import draw, gfxdraw
 
 import math
 
+
 class Kilobot:
     # all parameters in real world units
-    RADIUS = 0.0165 # meters
+    RADIUS = 0.0165  # meters
 
-    MAX_LINEAR_VELOCITY = 0.01 # meters / s
-    MAX_ANGULAR_VELOCITY = 0.1 * math.pi # radians / s
+    MAX_LINEAR_VELOCITY = 0.01  # meters / s
+    MAX_ANGULAR_VELOCITY = 0.1 * math.pi  # radians / s
 
     DENSITY = 1.0
     FRICTION = 0.2
@@ -51,7 +51,7 @@ class Kilobot:
         self.line_color = (255, 0, 0, 255)
 
     def step(self):
-        raise NotImplementedError("Kilobot subclass needs to implement step")
+        raise NotImplementedError('Kilobot subclass needs to implement step')
 
     def setVelocities(self):
         factor_left = self.value_motor_left / 255.0

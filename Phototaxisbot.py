@@ -1,5 +1,6 @@
 from Kilobot import Kilobot
 
+
 class Phototaxisbot(Kilobot):
     def __init__(self, world, scale_real_to_sim, scale_real_to_vis, pos, env):
         Kilobot.__init__(self, world, scale_real_to_sim, scale_real_to_vis, pos)
@@ -18,7 +19,7 @@ class Phototaxisbot(Kilobot):
         dist = (pos_real - self.env['light_pos']).length
 
         current_light = 1.0 - dist
-        #print(current_light)
+        #  print(current_light)
 
         if current_light < 1:
 
@@ -34,7 +35,7 @@ class Phototaxisbot(Kilobot):
             self.last_light = current_light
 
             if self.counter > 50:
-                other = 30 # 150
+                other = 30  # 150
             else:
                 other = 0
 

@@ -14,15 +14,18 @@ import random
 import math
 import time
 
+from zmq import Context, PAIR
+import pickle
+
 from pygame import draw, gfxdraw
 
 WIDTH, HEIGHT = 1200, 600
-SCALE_REAL_TO_SIM = 10 # for numerical reasons
-SCALE_REAL_TO_VIS = HEIGHT # 1m = HEIGHT pixels
+SCALE_REAL_TO_SIM = 10  # for numerical reasons
+SCALE_REAL_TO_VIS = HEIGHT  # 1m = HEIGHT pixels
 
 # pygame
-screen = pygame.display.set_mode((WIDTH, HEIGHT), HWSURFACE|DOUBLEBUF, 32)
-pygame.display.set_caption("kbsim - 0.0s")
+screen = pygame.display.set_mode((WIDTH, HEIGHT), HWSURFACE | DOUBLEBUF, 32)
+pygame.display.set_caption('kbsim - 0.0s')
 clock = pygame.time.Clock()
 
 # pybox2d
@@ -37,14 +40,20 @@ push_object = Object(world, SCALE_REAL_TO_SIM, SCALE_REAL_TO_VIS, (1.25, 0.75))
 # environment (TODO: environment class)
 env = {'light_pos': [1.75, 0.75]}
 
-# kilobots
-Kilobots = []
-for i in range(100):
-    x = 1.0 + 0.5 * random.random()
-    y = 0.5 + 0.5 * random.random()
+# zqm
+PORT = 2357
+context = Context()
+socket = context.socket(PAIR)
+socket.connect('tcp://localhost:{}'.format(PORT))
 
-    Kilobots += [Phototaxisbot(world, SCALE_REAL_TO_SIM,
-        SCALE_REAL_TO_VIS, (x, y), env)]
+while True:
+    msg = pickle.loads(socket.recv())
+
+    if msg['message'] == 'getSamples':
+        print('received getSamples')
+        gp =
+    else:
+        print('received unknown message: {}'.format(msg))
 
 # main loop
 running = True
@@ -98,10 +107,10 @@ while running:
     if not paused:
         #start_time = time.time()
         world.Step(time_step, 10, 10) # 10 pos and vel update iterations
-        #print("step took {}ms".format((time.time() - start_time) * 1000))
+        #print('step took {}ms'.format((time.time() - start_time) * 1000))
 
         curr_time = curr_time + time_step
-        pygame.display.set_caption("kbsim - {:.2f}s - ts: {:.0f}ms".
+        pygame.display.set_caption('kbsim - {:.2f}s - ts: {:.0f}ms'.
                 format(curr_time, time_step * 1000))
 
     pygame.display.flip()

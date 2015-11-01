@@ -1,6 +1,6 @@
 from Box2D.b2 import*
+from pygame import gfxdraw
 
-from pygame import draw, gfxdraw
 
 class Labyrinth:
     """
@@ -19,14 +19,14 @@ class Labyrinth:
         # uses meters in the real world | origin is at bottom, left
         # labyrinth is 2m x 1m
 
-        self.add_wall(0.01, 0.50, 0.01, 0.50) # left
-        self.add_wall(1.99, 0.50, 0.01, 0.50) # right
-        self.add_wall(1.00, 0.99, 1.00, 0.01) # top
-        self.add_wall(1.00, 0.01, 1.00, 0.01) # bottom
+        self.add_wall(0.01, 0.50, 0.01, 0.50)  # left
+        self.add_wall(1.99, 0.50, 0.01, 0.50)  # right
+        self.add_wall(1.00, 0.99, 1.00, 0.01)  # top
+        self.add_wall(1.00, 0.01, 1.00, 0.01)  # bottom
 
-        self.add_wall(0.50, 0.25, 0.01, 0.25) # near goal
-        self.add_wall(1.00, 0.75, 0.01, 0.25) # near start (1)
-        self.add_wall(1.245, 0.50, 0.255, 0.01) # near start (2)
+        self.add_wall(0.50, 0.25, 0.01, 0.25)  # near goal
+        self.add_wall(1.00, 0.75, 0.01, 0.25)  # near start (1)
+        self.add_wall(1.245, 0.50, 0.255, 0.01)  # near start (2)
 
         self.wall_color = (127, 127, 127, 255)
 

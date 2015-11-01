@@ -1,6 +1,6 @@
 from Box2D.b2 import*
+from pygame import gfxdraw
 
-from pygame import draw, gfxdraw
 
 class Object:
     HALF_W = 0.075
