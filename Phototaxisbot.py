@@ -1,4 +1,7 @@
 from Kilobot import Kilobot
+from numpy import array
+from numpy.linalg import norm
+from Box2D.b2 import *
 
 
 class Phototaxisbot(Kilobot):
@@ -14,14 +17,15 @@ class Phototaxisbot(Kilobot):
         self.env = env
 
     def step(self):
+        light = self.env['light_pos']
+
         pos_real = self.scale_sim_to_real * \
-                self.body.GetWorldPoint((0.0, self.sim_radius))
-        dist = (pos_real - self.env['light_pos']).length
+                   self.body.GetWorldPoint((0.0, self.sim_radius))
+        dist = (pos_real - vec2(light[0, 0], light[0, 1])).length
 
         current_light = 1.0 - dist
-        #  print(current_light)
 
-        if current_light < 1:
+        if dist > 0.01:
 
             if current_light < self.last_light:
                 self.counter = 0
@@ -42,8 +46,8 @@ class Phototaxisbot(Kilobot):
             other = 0
 
             if self.turn_cw == 1:
-                self.set_motor(255, other)
+                self.setMotor(255, other)
             else:
-                self.set_motor(other, 255)
+                self.setMotor(other, 255)
         else:
-            self.set_motor(0, 0)
+            self.setMotor(0, 0)

@@ -1,5 +1,6 @@
-from Box2D.b2 import*
+from Box2D.b2 import *
 from pygame import draw, gfxdraw
+from numpy import array
 
 import math
 
@@ -64,9 +65,13 @@ class Kilobot:
                 (0.0, linear_factor * self.sim_max_lin_vel))
         self.body.angularVelocity = angular_factor * self.MAX_ANGULAR_VELOCITY
 
-    def set_motor(self, left, right):
+    def setMotor(self, left, right):
         self.value_motor_left = left
         self.value_motor_right = right
+
+    def getRealPosition(self):
+        pos = self.body.position
+        return array([pos[0], pos[1]]).reshape(1, 2) / self.scale_real_to_sim
 
     def draw(self, screen):
         h = screen.get_height()

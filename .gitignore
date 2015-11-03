@@ -1,1 +1,3 @@
 *.pyc
+Kernel.py
+SparseGPPolicy.py
