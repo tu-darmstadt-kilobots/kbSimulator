@@ -58,6 +58,7 @@ class Kilobot:
         factor_left = self.value_motor_left / 255.0
         factor_right = self.value_motor_right / 255.0
 
+        # TODO probably not the right way to move the kilobots
         linear_factor = 0.5 * (factor_left + factor_right)
         angular_factor = factor_right - factor_left
 

@@ -17,6 +17,8 @@ class Phototaxisbot(Kilobot):
         self.env = env
 
     def step(self):
+        # TODO better method to simulate the ambient light sensor
+        # (multiple lights?)
         light = self.env['light_pos']
 
         pos_real = self.scale_sim_to_real * \
@@ -25,8 +27,8 @@ class Phototaxisbot(Kilobot):
 
         current_light = 1.0 - dist
 
+        # TODO better phototaxis algorithm?
         if dist > 0.01:
-
             if current_light < self.last_light:
                 self.counter = 0
                 if self.turn_cw == 1:

@@ -1,3 +1,6 @@
 *.pyc
+
+# the following files are automatically copied from kb_mazerunner
 Kernel.py
 SparseGPPolicy.py
+Helper.py
