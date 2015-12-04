@@ -71,9 +71,10 @@ class SingleKilobotMazeSimulator:
                 policyDict = msg['policyDict']
                 self.policy = policyModule.fromSerializableDict(policyDict)
 
+                epsilon = msg['epsilon']
                 useMean = msg['useMean']
 
-                S, A, R, S_ = self._generateSamples(useMean)
+                S, A, R, S_ = self._generateSamples(epsilon, useMean)
 
                 msg = {'message': 'sentSamples',
                        'samples': (S, A, R, S_)}
@@ -81,26 +82,30 @@ class SingleKilobotMazeSimulator:
             else:
                 print('got unexpected message')
 
-    def _generateSamples(self, useMean):
+    """
+        epsilon: prob. to choose a random action
+    """
+    def _generateSamples(self, epsilon, useMean):
+        # TODO control rotation or angular velocity + fixed linear velocity
+
         self.kilobot.fixture.friction = 20
 
         """ define grid to sample from """
         #gridX = 20
         #gridY = 10
-        #gridNum = 3
+        #gridNum = 1
 
         #[X, Y] = meshgrid(linspace(0.1, 1.9, gridX), linspace(0.1, 0.9, gridY))
         #X = X.flatten()
         #Y = Y.flatten()
 
-        #numEpisodes = gridNum * gridX * gridY
+        #numEpisodesGrid = 0 # gridNum * gridX * gridY
 
         """ sample from random points """
-        numEpisodes = 60
-
+        numEpisodesRandom = 60
 
         numStepsPerEpisode = 40
-        numSamples = numEpisodes * numStepsPerEpisode
+        numSamples = numEpisodesRandom * numStepsPerEpisode
 
         goal = np.matrix([0.25, 0.25])
         thresh = 0.1 # m
@@ -116,7 +121,7 @@ class SingleKilobotMazeSimulator:
 
         line_color = (0, 255, 0, 255)
 
-        for ep in range(numEpisodes):
+        for ep in range(numEpisodesRandom):
             path = []
 
             # grid
@@ -176,8 +181,10 @@ class SingleKilobotMazeSimulator:
                 if useMean:
                     a = self.policy.getMeanAction(s)
                 else:
-                    a = self.policy.sampleActions(s, 1)[1]
-
+                    if random.random() <= epsilon:
+                        a = self.policy.getRandomAction()
+                    else:
+                        a = self.policy.sampleActions(s)
 
                 #maxStep = 0.5
                 #n = linalg.norm(a)
