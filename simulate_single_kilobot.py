@@ -110,7 +110,7 @@ class SingleKilobotMazeSimulator:
         goal = np.matrix([0.25, 0.25])
         thresh = 0.1 # m
 
-        stepsPerSec = 512
+        stepsPerSec = 4096
 
         # s: kilobot pos
         # a: kilobot movement (dx, dy)
@@ -197,19 +197,28 @@ class SingleKilobotMazeSimulator:
 
                 # take action
                 newKbPos = kbPos + vec2(a[0, 0], a[0, 1])
-                # make sure kilobot takes full action if possible
-                for i in range(10):
-                    self.kilobot.body.linearVelocity = 1.0 * \
-                        self.SCALE_REAL_TO_SIM * (newKbPos - kbPos)
-                    self.world.Step(0.1, 10, 10)
+                numSteps = 1
+                stepTime = 1
+                velocity = vec2(a[0, 0], a[0, 1]) / (numSteps * stepTime)
+                self.kilobot.body.linearVelocity = velocity * self.SCALE_REAL_TO_SIM
+                self.kilobot.body.linearDamping = 0.0
+                for i in range(numSteps):
+                    self.world.Step(stepTime, 10, 10)
 
                 kbPos = self.kilobot.body.position / self.SCALE_REAL_TO_SIM
                 s_ = matrix([kbPos[0], kbPos[1]])
 
                 # binary reward
-                r = 0
                 if linalg.norm(goal - s) <= thresh:
                     r = 1
+                else:
+                    a_real = s_ - s;
+                    ratio = linalg.norm(a_real) / linalg.norm(a);
+                    r = 0.1 * (ratio - 1);
+                    #distance = linalg.norm(s_ - (s + a)) / linalg.norm(a)
+                    #r = -0.1*distance
+
+                #print("s:",s," a:",a," s_:",s_," r:",r)
 
                 # continuous reward
                 #r = -(linalg.norm(goal - matrix([s[0, 0], s[0, 1]])) ** 4)
