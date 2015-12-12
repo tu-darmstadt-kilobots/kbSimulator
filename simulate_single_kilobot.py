@@ -86,26 +86,13 @@ class SingleKilobotMazeSimulator:
         epsilon: prob. to choose a random action
     """
     def _generateSamples(self, epsilon, useMean):
-        # TODO control rotation or angular velocity + fixed linear velocity
-
         self.kilobot.fixture.friction = 20
 
-        """ define grid to sample from """
-        #gridX = 20
-        #gridY = 10
-        #gridNum = 1
-
-        #[X, Y] = meshgrid(linspace(0.1, 1.9, gridX), linspace(0.1, 0.9, gridY))
-        #X = X.flatten()
-        #Y = Y.flatten()
-
-        #numEpisodesGrid = 0 # gridNum * gridX * gridY
-
         """ sample from random points """
-        numEpisodesRandom = 60
+        numEpisodes = 60
 
         numStepsPerEpisode = 40
-        numSamples = numEpisodesRandom * numStepsPerEpisode
+        numSamples = numEpisodes * numStepsPerEpisode
 
         goal = np.matrix([0.25, 0.25])
         thresh = 0.1 # m
@@ -121,12 +108,8 @@ class SingleKilobotMazeSimulator:
 
         line_color = (0, 255, 0, 255)
 
-        for ep in range(numEpisodesRandom):
+        for ep in range(numEpisodes):
             path = []
-
-            # grid
-            #x = X[ep % X.shape[0]]
-            #y = Y[ep % X.shape[0]]
 
             # random
             x = 0.1 + random.random() * 1.8 # in [0.1, 1.9]
@@ -186,17 +169,7 @@ class SingleKilobotMazeSimulator:
                     else:
                         a = self.policy.sampleActions(s)
 
-                #maxStep = 0.5
-                #n = linalg.norm(a)
-
-                #if n > maxStep:
-                #    aCapped = a * maxStep / n
-                #else:
-                #    aCapped = a
-
-
-                # take action
-                newKbPos = kbPos + vec2(a[0, 0], a[0, 1])
+                # take action TODO add noise?
                 numSteps = 1
                 stepTime = 1
                 velocity = vec2(a[0, 0], a[0, 1]) / (numSteps * stepTime)
@@ -208,7 +181,7 @@ class SingleKilobotMazeSimulator:
                 kbPos = self.kilobot.body.position / self.SCALE_REAL_TO_SIM
                 s_ = matrix([kbPos[0], kbPos[1]])
 
-                # binary reward
+                # binary reward + punishment for running into walls
                 if linalg.norm(goal - s) <= thresh:
                     r = 1
                 else:
@@ -217,11 +190,6 @@ class SingleKilobotMazeSimulator:
                     r = 0.1 * (ratio - 1);
                     #distance = linalg.norm(s_ - (s + a)) / linalg.norm(a)
                     #r = -0.1*distance
-
-                #print("s:",s," a:",a," s_:",s_," r:",r)
-
-                # continuous reward
-                #r = -(linalg.norm(goal - matrix([s[0, 0], s[0, 1]])) ** 4)
 
                 # add to path
                 f = self.SCALE_REAL_TO_VIS
