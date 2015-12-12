@@ -52,6 +52,7 @@ class SingleKilobotMazeSimulator:
                 self.SCALE_REAL_TO_VIS)
         self.kilobot = Kilobot(self.world, self.SCALE_REAL_TO_SIM,
                 self.SCALE_REAL_TO_VIS, [0, 0])
+        self.kilobot.fixture.friction = 20
 
         # zqm
         context = Context()
@@ -71,10 +72,21 @@ class SingleKilobotMazeSimulator:
                 policyDict = msg['policyDict']
                 self.policy = policyModule.fromSerializableDict(policyDict)
 
-                epsilon = msg['epsilon']
-                useMean = msg['useMean']
 
-                S, A, R, S_ = self._generateSamples(epsilon, useMean)
+                # read parameters
+                self.numEpisodes = msg['numEpisodes']
+                self.numStepsPerEpisode = msg['numStepsPerEpisode']
+
+                self.stepsPerSec = msg['stepsPerSec']
+
+                self.goalReward = msg['goalReward']
+                self.wallPunishment = msg['wallPunishment']
+
+                self.epsilon = msg['epsilon']
+                self.useMean = msg['useMean']
+
+
+                S, A, R, S_ = self._generateSamples()
 
                 msg = {'message': 'sentSamples',
                        'samples': (S, A, R, S_)}
@@ -85,19 +97,13 @@ class SingleKilobotMazeSimulator:
     """
         epsilon: prob. to choose a random action
     """
-    def _generateSamples(self, epsilon, useMean):
-        self.kilobot.fixture.friction = 20
+    def _generateSamples(self):
 
         """ sample from random points """
-        numEpisodes = 60
-
-        numStepsPerEpisode = 40
-        numSamples = numEpisodes * numStepsPerEpisode
+        numSamples = self.numEpisodes * self.numStepsPerEpisode
 
         goal = np.matrix([0.25, 0.25])
         thresh = 0.1 # m
-
-        stepsPerSec = 4096
 
         # s: kilobot pos
         # a: kilobot movement (dx, dy)
@@ -108,7 +114,7 @@ class SingleKilobotMazeSimulator:
 
         line_color = (0, 255, 0, 255)
 
-        for ep in range(numEpisodes):
+        for ep in range(self.numEpisodes):
             path = []
 
             # random
@@ -118,15 +124,15 @@ class SingleKilobotMazeSimulator:
             self.kilobot.body.position = vec2(self.SCALE_REAL_TO_SIM * x,
                     self.SCALE_REAL_TO_SIM * y)
 
-            for step in range(numStepsPerEpisode):
+            for step in range(self.numStepsPerEpisode):
                 """ user interaction and drawing """
                 # handle keys
                 for event in pygame.event.get():
                     if event.type == KEYDOWN:
                         if event.key == K_PLUS:
-                            stepsPerSec *= 2
+                            self.stepsPerSec *= 2
                         elif event.key == K_MINUS:
-                            stepsPerSec = np.max([1, stepsPerSec / 2])
+                            self.stepsPerSec = np.max([1, self.stepsPerSec / 2])
 
                 """ drawing """
                 # draw labyrinth
@@ -150,21 +156,21 @@ class SingleKilobotMazeSimulator:
                 kbPos = self.kilobot.body.position / self.SCALE_REAL_TO_SIM
                 pygame.display.set_caption(('ep: {} - step: {} - ' +
                     'stepsPerSec: {} - goalDist: {:.2f} cm')
-                        .format(ep + 1, step + 1, stepsPerSec,
+                        .format(ep + 1, step + 1, self.stepsPerSec,
                             linalg.norm(goal - matrix([kbPos[0], kbPos[1]])) * 100))
 
                 pygame.display.flip()
-                self.clock.tick(stepsPerSec)
+                self.clock.tick(self.stepsPerSec)
 
                 """ simulation """
                 # current state
                 s = matrix([kbPos[0], kbPos[1]])
 
                 # choose action
-                if useMean:
+                if self.useMean:
                     a = self.policy.getMeanAction(s)
                 else:
-                    if random.random() <= epsilon:
+                    if random.random() <= self.epsilon:
                         a = self.policy.getRandomAction()
                     else:
                         a = self.policy.sampleActions(s)
@@ -183,11 +189,11 @@ class SingleKilobotMazeSimulator:
 
                 # binary reward + punishment for running into walls
                 if linalg.norm(goal - s) <= thresh:
-                    r = 1
+                    r = self.goalReward
                 else:
                     a_real = s_ - s;
                     ratio = linalg.norm(a_real) / linalg.norm(a);
-                    r = 0.1 * (ratio - 1);
+                    r = self.wallPunishment * (ratio - 1);
                     #distance = linalg.norm(s_ - (s + a)) / linalg.norm(a)
                     #r = -0.1*distance
 
@@ -197,7 +203,7 @@ class SingleKilobotMazeSimulator:
                              (f * s_[0, 0], self.HEIGHT - f * s_[0, 1])))
 
                 # record sample
-                sampleIdx = ep * numStepsPerEpisode + step
+                sampleIdx = ep * self.numStepsPerEpisode + step
 
                 S[sampleIdx, :] = s
                 A[sampleIdx, :] = a
