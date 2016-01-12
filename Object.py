@@ -1,12 +1,13 @@
 from Box2D.b2 import*
 from pygame import gfxdraw
 
+from numpy import array
 
 class Object:
     HALF_W = 0.075
     HALF_H = 0.075
 
-    DENSITY = 10.0
+    DENSITY = 1.0
     FRICTION = 1.0
     RESTITUTION = 0.0
 
@@ -21,6 +22,7 @@ class Object:
     """
     def __init__(self, world, scale_real_to_sim, scale_real_to_vis, pos):
         self.scale_sim_to_vis = (1.0 / scale_real_to_sim) * scale_real_to_vis
+        self.scale_real_to_sim = scale_real_to_sim
 
         self.body = world.CreateDynamicBody(
                 position = scale_real_to_sim * vec2(pos[0], pos[1]),
@@ -33,6 +35,10 @@ class Object:
                 restitution = self.RESTITUTION)
 
         self.object_color = (127, 255, 127, 255)
+
+    def getRealPosition(self):
+        pos = self.body.position
+        return array([pos[0], pos[1]]).reshape(1, 2) / self.scale_real_to_sim
 
     def draw(self, screen):
         h = screen.get_height()
