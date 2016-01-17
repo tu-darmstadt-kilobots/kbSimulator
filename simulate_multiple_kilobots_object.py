@@ -2,7 +2,7 @@
 
 """
     Multiple Kilobots move directly to the light.
-    They learn to push an object.
+    They learn to push an object in a single direction.
     The light is moved based on a policy provided by the learner.
 
     NOTE: For now needs to be started before the learner to work correctly.
@@ -16,7 +16,6 @@ import pygame
 import Box2D
 from Box2D.b2 import*
 
-from Labyrinth import Labyrinth
 from Object import Object
 from Kilobot import Kilobot
 
@@ -49,9 +48,6 @@ class KilobotsObjectMazeSimulator:
 
         # pybox2d
         self.world = world(gravity=(0, 0), doSleep=True)
-
-        self.labyrinth = Labyrinth(self.world, self.SCALE_REAL_TO_SIM,
-                self.SCALE_REAL_TO_VIS)
 
         # create kilobots
         self.kilobots = []
@@ -107,33 +103,34 @@ class KilobotsObjectMazeSimulator:
                 print('got unexpected message')
 
     def _generateSamples(self):
-        """ sample from random points """
         numSamples = self.numEpisodes * self.numStepsPerEpisode
 
-        goal = np.matrix([0.25, 0.25])
-        thresh = 0.1 # m
-
-        # s: obj.x obj.y obj.alpha light.x light.y kb.x1 kb.y1 ... kb.xn kb.yn
+        # s: obj.alpha light.x light.y kb.x1 kb.y1 ... kb.xn kb.yn
+        #    everything is relative to the object position
         # a: light movement (dx, dy)
-        S = asmatrix(empty((numSamples, 3 + 2 + 2 * self.NUM_KILOBOTS)))
+        S = asmatrix(empty((numSamples, 1 + 2 + 2 * self.NUM_KILOBOTS)))
         A = asmatrix(empty((numSamples, 2)))
         R = asmatrix(empty((numSamples, 1)))
-        S_ = asmatrix(empty((numSamples, 3 + 2 + 2 * self.NUM_KILOBOTS)))
+        S_ = asmatrix(empty((numSamples, 1 + 2 + 2 * self.NUM_KILOBOTS)))
+
+        # fixed object start position
+        objStartX = 1.0
+        objStartY = 0.5
 
         for ep in range(self.numEpisodes):
-            objX = 0.1 + random.random() * 1.8
-            objY = 0.1 + random.random() * 0.8
-
-            self.pushObject.body.position = vec2(objX, objY) * self.SCALE_REAL_TO_SIM
+            # fixed object position
+            self.pushObject.body.position = vec2(objStartX, objStartY) *\
+                    self.SCALE_REAL_TO_SIM
 
             # kilobots start around the object
             for kilobot in self.kilobots:
-                kbX = objX - 0.1 + random.random() * 0.2 # [x - 0.1, x + 0.1]
-                kbY = objY - 0.1 + random.random() * 0.2 # [y - 0.1, y + 0.1]
+                kbX = objStartX - 0.1 + random.random() * 0.2
+                kbY = objStartY - 0.1 + random.random() * 0.2
 
                 kilobot.body.position = vec2(kbX, kbY) * self.SCALE_REAL_TO_SIM
 
-            lightPos = matrix([objX, objY])
+            # light starts over the object
+            lightPos = matrix([objStartX, objStartY])
 
 
             for step in range(self.numStepsPerEpisode):
@@ -148,7 +145,6 @@ class KilobotsObjectMazeSimulator:
 
                 """ drawing """
                 self.screen.fill((0, 0, 0, 0))
-                self.labyrinth.draw(self.screen)
 
                 self.pushObject.draw(self.screen)
 
@@ -162,13 +158,6 @@ class KilobotsObjectMazeSimulator:
                 lr = int(self.SCALE_REAL_TO_VIS * 0.02)
                 gfxdraw.aacircle(self.screen, lx, ly, lr, (255, 255, 0))
 
-                # draw goal
-                gx = int(self.SCALE_REAL_TO_VIS * goal[0, 0])
-                gy = int(self.screen.get_height() - self.SCALE_REAL_TO_VIS *
-                        goal[0, 1])
-                gr = int(self.SCALE_REAL_TO_VIS * thresh)
-                gfxdraw.aacircle(self.screen, gx, gy, gr, (0, 255, 0, 255))
-
                 pygame.display.set_caption(('ep: {} - step: {} - ' +
                     'stepsPerSec: {}').format(ep + 1, step + 1, self.stepsPerSec))
 
@@ -181,16 +170,14 @@ class KilobotsObjectMazeSimulator:
                 objAngle = self.pushObject.body.angle
 
                 s = asmatrix(empty((1, S.shape[1])))
-                s[0, 0] = objPos[0, 0]
-                s[0, 1] = objPos[0, 1]
-                s[0, 2] = objAngle
-                s[0, 3] = lightPos[0, 0]
-                s[0, 4] = lightPos[0, 1]
+                s[0, 0] = objAngle
+                s[0, 1] = lightPos[0, 0] - objPos[0, 0]
+                s[0, 2] = lightPos[0, 1] - objPos[0, 1]
 
                 for (i, kilobot) in zip(range(self.NUM_KILOBOTS), self.kilobots):
                     kbPos = kilobot.getRealPosition()
-                    s[0, 5 + 2 * i + 0] = kbPos[0, 0]
-                    s[0, 5 + 2 * i + 1] = kbPos[0, 1]
+                    s[0, 3 + 2 * i + 0] = kbPos[0, 0] - objPos[0, 0]
+                    s[0, 3 + 2 * i + 1] = kbPos[0, 1] - objPos[0, 1]
 
                 # choose action
                 if self.useMean:
@@ -222,25 +209,17 @@ class KilobotsObjectMazeSimulator:
                 objAngle = self.pushObject.body.angle
 
                 s_ = asmatrix(empty((1, S.shape[1])))
-                s_[0, 0] = objPos[0, 0]
-                s_[0, 1] = objPos[0, 1]
-                s_[0, 2] = objAngle
-                s_[0, 3] = lightPos[0, 0]
-                s_[0, 4] = lightPos[0, 1]
+                s_[0, 0] = objAngle
+                s_[0, 1] = lightPos[0, 0] - objPos[0, 0]
+                s_[0, 2] = lightPos[0, 1] - objPos[0, 1]
 
                 for (i, kilobot) in zip(range(self.NUM_KILOBOTS), self.kilobots):
                     kbPos = kilobot.getRealPosition()
-                    s_[0, 5 + 2 * i + 0] = kbPos[0, 0]
-                    s_[0, 5 + 2 * i + 1] = kbPos[0, 1]
+                    s_[0, 3 + 2 * i + 0] = kbPos[0, 0] - objPos[0, 0]
+                    s_[0, 3 + 2 * i + 1] = kbPos[0, 1] - objPos[0, 1]
 
-                # binary reward
-                if linalg.norm(objPos - goal) <= thresh:
-                    r = self.goalReward
-                else:
-                    r = 0
-                    #a_real = s_ - s;
-                    #ratio = linalg.norm(a_real) / linalg.norm(a);
-                    #r = self.wallPunishment * (ratio - 1);
+                # reward: learn to move the object to the right
+                r = objPos[0, 1] - objStartY
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
