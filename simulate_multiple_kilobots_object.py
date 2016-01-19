@@ -35,7 +35,7 @@ class KilobotsObjectMazeSimulator:
     SCALE_REAL_TO_SIM = 10  # for numerical reasons
     SCALE_REAL_TO_VIS = HEIGHT  # 1m = HEIGHT pixels
 
-    NUM_KILOBOTS = 10
+    NUM_KILOBOTS = 4
 
     ZMQ_PORT = 2357
 
@@ -118,14 +118,15 @@ class KilobotsObjectMazeSimulator:
         objStartY = 0.5
 
         for ep in range(self.numEpisodes):
-            # fixed object position
             self.pushObject.body.position = vec2(objStartX, objStartY) *\
                     self.SCALE_REAL_TO_SIM
+            self.pushObject.body.angle = 0
 
-            # kilobots start around the object
+            # kilobots start left of the object
             for kilobot in self.kilobots:
-                kbX = objStartX - 0.1 + random.random() * 0.2
-                kbY = objStartY - 0.1 + random.random() * 0.2
+                kbX = objStartX - self.pushObject.HALF_W - kilobot.RADIUS
+                kbY = objStartY - self.pushObject.HALF_H +\
+                        random.random() * 2 * self.pushObject.HALF_H
 
                 kilobot.body.position = vec2(kbX, kbY) * self.SCALE_REAL_TO_SIM
 
@@ -202,7 +203,8 @@ class KilobotsObjectMazeSimulator:
                             self.SCALE_REAL_TO_SIM
                     kilobot.body.linearDamping = 0.0
 
-                self.world.Step(1, 10, 10)
+                for i in range(10):
+                    self.world.Step(0.1, 10, 10)
 
                 # next state
                 objPos = self.pushObject.getRealPosition()
@@ -219,7 +221,7 @@ class KilobotsObjectMazeSimulator:
                     s_[0, 3 + 2 * i + 1] = kbPos[0, 1] - objPos[0, 1]
 
                 # reward: learn to move the object to the right
-                r = objPos[0, 1] - objStartY
+                r = objPos[0, 0] - objStartX
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
