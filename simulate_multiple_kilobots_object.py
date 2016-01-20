@@ -168,6 +168,7 @@ class KilobotsObjectMazeSimulator:
                 """ simulation """
                 # current state
                 objPos = self.pushObject.getRealPosition()
+                objPosOld = objPos
                 objAngle = self.pushObject.body.angle
 
                 s = asmatrix(empty((1, S.shape[1])))
@@ -190,6 +191,8 @@ class KilobotsObjectMazeSimulator:
                         a = self.policy.sampleActions(s)
 
                 # take action / TODO add noise?
+                #if linalg.norm(a) > 0.3:
+                #	a = 0.3*a / linalg.norm(a)
                 lightPos += a
                 lightPos[0, 0] = np.min([1.9, np.max([0.1, lightPos[0, 0]])])
                 lightPos[0, 1] = np.min([0.9, np.max([0.1, lightPos[0, 1]])])
@@ -221,7 +224,19 @@ class KilobotsObjectMazeSimulator:
                     s_[0, 3 + 2 * i + 1] = kbPos[0, 1] - objPos[0, 1]
 
                 # reward: learn to move the object to the right
-                r = objPos[0, 0] - objStartX
+                objMovement = objPos - objPosOld
+                r = objMovement[0,0]
+
+                #lightDistance = linalg.norm(lightPos - objPos)
+                #if lightDistance > 0.5:
+                #	r = -1
+
+                #toleranceAngle = 45
+                #angle = math.fabs(math.degrees(math.atan2(objMovement[0,1], objMovement[0,0])))
+               	#rAngle = (toleranceAngle - angle) / toleranceAngle
+               	#r = rAngle * linalg.norm(objMovement)
+
+                #r = objPos[0, 0] - objStartX
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
