@@ -226,6 +226,9 @@ class KilobotsObjectMazeSimulator:
                     if dist <= goalThresh:
                         r += 1
 
+                #if linalg.norm(lightPos - goalPos) <= goalThresh:
+                #    r += 1
+
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
 
