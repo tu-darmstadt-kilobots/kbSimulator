@@ -30,6 +30,10 @@ class Labyrinth:
 
         self.wall_color = (127, 127, 127, 255)
 
+    def __del__(self):
+        for wall in self.walls:
+            self.world.DestroyBody(wall)
+
     """
         cx, cy, half_w, half_h in real world coordinates
     """

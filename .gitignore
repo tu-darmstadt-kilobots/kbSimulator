@@ -4,3 +4,4 @@
 Kernel.py
 SparseGPPolicy.py
 Helper.py
+MazePolicy.py
