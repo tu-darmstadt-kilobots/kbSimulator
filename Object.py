@@ -53,6 +53,11 @@ class Object:
         pos = self.body.position
         return array([pos[0], pos[1]]).reshape(1, 2) / self.scale_real_to_sim
 
+
+    def getOrientation(self):
+        orientation = self.body.angle
+        return orientation
+
     def draw(self, screen):
         h = screen.get_height()
         s = self.scale_sim_to_vis
