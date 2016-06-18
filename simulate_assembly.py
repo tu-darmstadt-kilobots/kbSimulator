@@ -7,19 +7,15 @@
     policy gives the position to move to for solving the maze (mazePolicy).
 """
 
-import pygame
 from pygame.locals import *
 from pygame import draw, gfxdraw
 import pygame
 
-import Box2D
 from Box2D.b2 import*
 
 from Object import Object
 from Kilobot import Kilobot
-from Labyrinth import Labyrinth
-
-import random
+from assembly_world import AssemblyWorld
 
 from zmq import Context, PAIR
 import pickle
@@ -47,7 +43,7 @@ class KilobotsObjectMazeSimulator:
         # pybox2d
         self.world = world(gravity=(0, 0), doSleep=True)
 
-        self.maze = Labyrinth(self.world, self.SCALE_REAL_TO_SIM, self.SCALE_REAL_TO_VIS)
+        self.assembly_world = AssemblyWorld(self.world, self.SCALE_REAL_TO_SIM, self.SCALE_REAL_TO_VIS)
 
         # zqm
         context = Context()
@@ -103,6 +99,9 @@ class KilobotsObjectMazeSimulator:
         self.pushObject = Object(self.world, self.SCALE_REAL_TO_SIM,
                                  self.SCALE_REAL_TO_VIS, [0, 0], self.objectShape)
 
+        self.secondObject = Object(self.world, self.SCALE_REAL_TO_SIM,
+                                 self.SCALE_REAL_TO_VIS, [0, 0], self.objectShape)
+
         # fixed object start position
         objStartX = 1.25
         objStartY = 0.75
@@ -113,6 +112,11 @@ class KilobotsObjectMazeSimulator:
         self.pushObject.body.position = vec2(objStartX, objStartY) * \
                                         self.SCALE_REAL_TO_SIM
         self.pushObject.body.angle = 0
+
+        self.secondObject.body.position = vec2(1.4, 0.8) * \
+                                        self.SCALE_REAL_TO_SIM
+
+        self.secondObject.body.angle = 0
 
         # light starts over the object
         self.lightPos = matrix([objStartX, objStartY])
@@ -143,8 +147,10 @@ class KilobotsObjectMazeSimulator:
         """ drawing """
         self.screen.fill((0, 0, 0, 0))
 
-        self.maze.draw(self.screen)
+        self.assembly_world.draw(self.screen)
         self.pushObject.draw(self.screen)
+        self.secondObject.draw(self.screen)
+
 
         for kilobot in self.kilobots:
             kilobot.draw(self.screen)
