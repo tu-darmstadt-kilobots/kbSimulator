@@ -1,7 +1,10 @@
 from Box2D.b2 import*
+from Box2D import b2PolygonShape
+
 from pygame import gfxdraw
 
 from numpy import array
+import numpy as np
 
 class Object:
     HALF_W = 0.075
@@ -37,12 +40,51 @@ class Object:
                     density = self.DENSITY,
                     friction = self.FRICTION,
                     restitution = self.RESTITUTION)
+
         elif shape == 'circle':
             self.fixture = self.body.CreateCircleFixture(
                     radius = scale_real_to_sim * self.HALF_H,
                     density = self.DENSITY,
                     friction = self.FRICTION,
                     restitution = self.RESTITUTION)
+
+        elif shape == 'l-form':
+            v1 = [(0, -0.1), (0.05, -0.1),  (0.05, 0.05), (0, 0.05)]
+            v1 = np.multiply(v1, scale_real_to_sim)
+            v2 = [(0.05, -0.1), (0.1, -0.1), (0.1, -0.05), (0.05, -0.05)]
+            v2 = np.multiply(v2, scale_real_to_sim)
+
+            self.body.CreatePolygonFixture(
+                shape=b2PolygonShape(vertices=v1.tolist()),
+                density=self.DENSITY,
+                friction=self.FRICTION,
+                restitution=self.RESTITUTION)
+            self.body.CreatePolygonFixture(
+                shape=b2PolygonShape(vertices=v2.tolist()),
+                density=self.DENSITY,
+                friction=self.FRICTION,
+                restitution=self.RESTITUTION)
+            self.fixture = self.body.fixtures
+
+        elif shape == 't-form':
+
+            v1 = [(0, 0), (0.075, 0),  (0.075,0.05), (-0.075,0.05), (-0.075, 0)]
+            v1 = np.multiply(v1, scale_real_to_sim)
+            v2 = [(0.025, 0), (0.025, -0.1), (-0.025, -0.1), (-0.025, 0)]
+            v2 = np.multiply(v2, scale_real_to_sim)
+
+            self.body.CreatePolygonFixture(
+                shape=b2PolygonShape(vertices=v1.tolist()),
+                density=self.DENSITY,
+                friction=self.FRICTION,
+                restitution=self.RESTITUTION)
+            self.body.CreatePolygonFixture(
+                shape=b2PolygonShape(vertices=v2.tolist()),
+                density=self.DENSITY,
+                friction=self.FRICTION,
+                restitution=self.RESTITUTION)
+
+            self.fixture = self.body.fixtures
         else:
             print('invalid \'shape\' in Object constructor')
 
@@ -73,3 +115,14 @@ class Object:
             y = self.body.position[1]
             gfxdraw.aacircle(screen, int(s * x), int(h - s * y), int(s *
                 self.HALF_H * self.scale_real_to_sim), self.object_color)
+
+        elif self.shape == 'l-form' or  self.shape == 't-form':
+
+            for fixture in self.fixture:
+                verts = fixture.shape.vertices
+                verts = [self.body.transform * vert for vert in verts]
+                verts = [(s * x, h - s * y) for (x, y) in verts]
+                #for a nice anti-aliased object outline
+                gfxdraw.aapolygon(screen, verts, self.object_color)
+                gfxdraw.filled_polygon(screen, verts, self.object_color)
+                gfxdraw.circle(screen, int(self.body.position[0] * s), int(h - self.body.position[1] * s), 10, (0, 255, 127, 255))
