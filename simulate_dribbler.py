@@ -47,7 +47,7 @@ class KilobotsObjectMazeSimulator:
         # pybox2d
         self.world = world(gravity=(0, 0), doSleep=True)
 
-        self.maze = Labyrinth(self.world, self.SCALE_REAL_TO_SIM, self.SCALE_REAL_TO_VIS)
+        #self.maze = Labyrinth(self.world, self.SCALE_REAL_TO_SIM, self.SCALE_REAL_TO_VIS)
 
         # zqm
         context = Context()
@@ -100,8 +100,8 @@ class KilobotsObjectMazeSimulator:
                 self.SCALE_REAL_TO_VIS, [0, 0], self.objectShape)
 
         # fixed object start position
-        objStartX = 1.25
-        objStartY = 0.75
+        objStartX = 0.25
+        objStartY = 0.5
 
         r = self.kilobots[0].RADIUS
         kilobotOffsets = array([[-r, -r], [r, -r], [-r, r], [r, r]])
@@ -137,7 +137,7 @@ class KilobotsObjectMazeSimulator:
             """ drawing """
             self.screen.fill((0, 0, 0, 0))
 
-            self.maze.draw(self.screen)
+            #self.maze.draw(self.screen)
             self.pushObject.draw(self.screen)
 
             for kilobot in self.kilobots:
@@ -151,6 +151,7 @@ class KilobotsObjectMazeSimulator:
             gfxdraw.aacircle(self.screen, lx, ly, lr, (255, 255, 0))
 
             objPos = self.pushObject.getRealPosition()
+            objOrientation = self.pushObject.getOrientation()
 
             # draw line from object to target position
             ox = int(self.SCALE_REAL_TO_VIS * objPos[0, 0])
@@ -176,24 +177,45 @@ class KilobotsObjectMazeSimulator:
                 s[0, 2 + 2 * i + 1] = kbPos[0, 1] - objPos[0, 1]
 
             # solve maze
-            targetPos = self.mazePolicy.getTargetPosition(objPos)
+            targetPos = self.mazePolicy.getTargetPosition(objPos, objOrientation)
 
             # rotate state
-            direction = targetPos - objPos
-            angle = -math.atan2(direction[0, 1], direction[0, 0])
+            direction = targetPos[:,0:2] - objPos
+            direction_angle = -math.atan2(direction[0, 1], direction[0, 0])
 
-            sx = s.flat[0::2] * math.cos(angle) - s.flat[1::2] * math.sin(angle)
-            sy = s.flat[1::2] * math.cos(angle) + s.flat[0::2] * math.sin(angle)
+            sx = s.flat[0::2] * math.cos(direction_angle) - s.flat[1::2] * math.sin(direction_angle)
+            sy = s.flat[1::2] * math.cos(direction_angle) + s.flat[0::2] * math.sin(direction_angle)
 
             s.flat[0::2] = sx
             s.flat[1::2] = sy
 
+            #rotation
+            rotation = targetPos[0,2] - objOrientation
+
             # choose action
-            a = self.objPolicyStraight.getMeanAction(s)
+            action_straight = self.objPolicyStraight.getMeanAction(s)
+            action_turn_left = self.objPolicyTurnLeft.getMeanAction(s)
+            action_turn_right = self.objPolicyTurnRight.getMeanAction(s)
+            print('rot %2.2f  trans %2.2f' % (rotation, linalg.norm(direction)))
+            # todo controller to choose between actions
+            trans_err = linalg.norm(direction)
+            rot_err = (rotation+pi) % (2*pi)-pi
+            a = action_straight
+            if(np.fabs(rot_err)  > trans_err):
+                if(rot_err < 0):
+                    a = action_turn_right
+                    print('action_turn_right')
+                else:
+                    a = action_turn_left
+                    print('action_turn_left')
+
+            print('rot %2.2f  trans %2.2f' % ((rot_err+pi) % (2*pi)-pi , trans_err))
+
+
 
             # rotate action
-            ax = a[0, 0] * math.cos(-angle) - a[0, 1] * math.sin(-angle)
-            ay = a[0, 1] * math.cos(-angle) + a[0, 0] * math.sin(-angle)
+            ax = a[0, 0] * math.cos(-direction_angle) - a[0, 1] * math.sin(-direction_angle)
+            ay = a[0, 1] * math.cos(-direction_angle) + a[0, 0] * math.sin(-direction_angle)
 
             a[0, 0] = ax
             a[0, 1] = ay
