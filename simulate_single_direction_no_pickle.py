@@ -119,13 +119,13 @@ class KilobotsObjectMazeSimulator:
         objStart = array([objStartX, objStartY])
 
         # kilobots start in a circel around the object
-        r = 2.0 * self.pushObject.HALF_W
+        radius = 2.0 * self.pushObject.HALF_W
         A = linspace(0, 2 * math.pi, self.numEpisodes + 1)[0:self.numEpisodes]
-        startPositions = c_[objStartX + np.cos(A) * r * 1.5*0,
-                            objStartY + np.sin(A) * r * 1.5*0];
+        startPositions = c_[objStartX + np.cos(A) * radius * 1.5*0,
+                            objStartY + np.sin(A) * radius * 1.5*0];
 
-        r = self.kilobots[0].RADIUS
-        kilobotOffsets = array([[-r, 0], [r, 0], [0, r], [0, -r]])
+        radius = self.kilobots[0].RADIUS
+        kilobotOffsets = array([[-radius, 0], [radius, 0], [0, radius], [0, -radius]])
 
         # s: light.x light.y kb.x1 kb.y1 ... kb.xn kb.yn
         #    everything is relative to the object position
@@ -144,10 +144,14 @@ class KilobotsObjectMazeSimulator:
             start = startPositions[ep, :]
             lightPos = matrix(start)
 
+            start_angles = 2 * np.pi * np.random.randn(self.numKilobots)
+
             # kilobots start at the light position in a fixed formation
             for (i, kilobot) in zip(range(self.numKilobots), self.kilobots):
-                x = start[0] + (10 + i / 4) * kilobotOffsets[i % 4, 0] + 0.1*(random.random()-0.5)
-                y = start[1] + (10 + i / 4) * kilobotOffsets[i % 4, 1] + 0.1*(random.random()-0.5)
+                #x = start[0] + (10 + i / 4) * kilobotOffsets[i % 4, 0] + 0.25*(random.random()-0.5)
+                #y = start[1] + (10 + i / 4) * kilobotOffsets[i % 4, 1] + 0.25*(random.random()-0.5)
+                x = start[0] + 1.25 * self.SCALE_REAL_TO_SIM * radius * cos(start_angles[i])
+                y = start[1] + 1.25 * self.SCALE_REAL_TO_SIM * radius * sin(start_angles[i])
                 kilobot.body.position = vec2(x, y) * self.SCALE_REAL_TO_SIM
 
             for step in range(self.numStepsPerEpisode):
@@ -248,18 +252,18 @@ class KilobotsObjectMazeSimulator:
                 # reward: learn to move the object to the right
                 objMovement = objPos - objPosOld
                 objRotation = objOrientation - objOrientationOld
-                r = objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.1*np.abs(objRotation)
+                reward = objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.1*np.abs(objRotation)
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
 
                 S[sampleIdx, :] = s
                 A[sampleIdx, :] = a
-                R[sampleIdx, :] = r
+                R[sampleIdx, :] = reward
                 S_[sampleIdx, :] = s_
 
         return S, A, R, S_
 
-if __name__ == '__main__':
-    sim = KilobotsObjectMazeSimulator()
-    sim.run()
+# if __name__ == '__main__':
+#     sim = KilobotsObjectMazeSimulator()
+#     sim.run()
