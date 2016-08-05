@@ -18,10 +18,6 @@ from kbSimulator.Labyrinth import Labyrinth
 
 import random
 
-from zmq import Context, PAIR
-import pickle
-import importlib
-
 from numpy import *
 import numpy as np
 import math
@@ -32,54 +28,17 @@ class KilobotsObjectMazeSimulator:
     SCALE_REAL_TO_SIM = 10  # for numerical reasons
     SCALE_REAL_TO_VIS = HEIGHT  # 1m = HEIGHT pixels
 
-    # ZMQ_PORT = 2357
-
     def __init__(self):
-        # pygame
-        self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT),
+        self.use_gui = True
+
+        if self.use_gui == True:
+            # pygame
+            self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT),
                 HWSURFACE | DOUBLEBUF, 32)
-        pygame.display.set_caption('kbsim - 0.0s')
+            pygame.display.set_caption('kbsim - 0.0s')
         self.clock = pygame.time.Clock()
 
         self.world = world(gravity=(0, 0), doSleep=True)
-
-        # zqm
-        # context = Context()
-        # self.socket = context.socket(PAIR)
-        # self.socket.connect('tcp://localhost:{}'.format(self.ZMQ_PORT))
-
-    # def run(self):
-    #     while True:
-    #         msg = pickle.loads(self.socket.recv())
-    #
-    #         if msg['message'] == 'sentPolicyModules':
-    #             for fileName, source in msg['modules']:
-    #                 with open(fileName, 'w') as f:
-    #                     f.write(source)
-    #             policyModule = importlib.import_module(msg['policyModule'])
-    #         elif msg['message'] == 'getSamples':
-    #             # load the policy
-    #             policyDict = msg['policyDict']
-    #             self.policy = policyModule.fromSerializableDict(policyDict)
-    #
-    #             # read parameters
-    #             self.objectShape = msg['objectShape']
-    #
-    #             self.numKilobots = msg['numKilobots']
-    #             self.numEpisodes = msg['numEpisodes']
-    #             self.numStepsPerEpisode = msg['numStepsPerEpisode']
-    #             self.stepsPerSec = msg['stepsPerSec']
-    #
-    #             self.epsilon = msg['epsilon']
-    #             self.useMean = msg['useMean']
-    #
-    #             S, A, R, S_ = self._generateSamples()
-    #
-    #             msg = {'message': 'sentSamples',
-    #                    'samples': (S, A, R, S_)}
-    #             self.socket.send(pickle.dumps(msg, protocol=2))
-    #         else:
-    #             print('got unexpected message')
 
     def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean):
             self.policy = policy #policyModule.fromSerializableDict(policyDict)
@@ -156,34 +115,36 @@ class KilobotsObjectMazeSimulator:
 
             for step in range(self.numStepsPerEpisode):
                 """ user interaction """
-                # handle keys
-                for event in pygame.event.get():
-                    if event.type == KEYDOWN:
-                        if event.key == K_PLUS:
-                            self.stepsPerSec *= 2
-                        elif event.key == K_MINUS:
-                            self.stepsPerSec = np.max([1, self.stepsPerSec / 2])
+                if self.use_gui == True:
+                    # handle keys
+                    for event in pygame.event.get():
+                        if event.type == KEYDOWN:
+                            if event.key == K_PLUS:
+                                self.stepsPerSec *= 2
+                            elif event.key == K_MINUS:
+                                self.stepsPerSec = np.max([1, self.stepsPerSec / 2])
 
                 """ drawing """
-                self.screen.fill((0, 0, 0, 0))
+                if self.use_gui == True:
+                    self.screen.fill((0, 0, 0, 0))
 
-                self.pushObject.draw(self.screen)
+                    self.pushObject.draw(self.screen)
 
-                for kilobot in self.kilobots:
-                    kilobot.draw(self.screen)
+                    for kilobot in self.kilobots:
+                        kilobot.draw(self.screen)
 
-                # draw light
-                lx = int(self.SCALE_REAL_TO_VIS * lightPos[0, 0])
-                ly = int(self.screen.get_height() - self.SCALE_REAL_TO_VIS *
+                    # draw light
+                    lx = int(self.SCALE_REAL_TO_VIS * lightPos[0, 0])
+                    ly = int(self.screen.get_height() - self.SCALE_REAL_TO_VIS *
                         lightPos[0, 1])
-                lr = int(self.SCALE_REAL_TO_VIS * 0.02)
-                gfxdraw.aacircle(self.screen, lx, ly, lr, (255, 255, 0))
+                    lr = int(self.SCALE_REAL_TO_VIS * 0.02)
+                    gfxdraw.aacircle(self.screen, lx, ly, lr, (255, 255, 0))
 
-                pygame.display.set_caption(('ep: {} - step: {} - ' +
+                    pygame.display.set_caption(('ep: {} - step: {} - ' +
                     'stepsPerSec: {}').format(ep + 1, step + 1, self.stepsPerSec))
 
-                pygame.display.flip()
-                self.clock.tick(self.stepsPerSec)
+                    pygame.display.flip()
+                    self.clock.tick(self.stepsPerSec)
 
                 """ simulation """
                 # current state
@@ -252,7 +213,7 @@ class KilobotsObjectMazeSimulator:
                 # reward: learn to move the object to the right
                 objMovement = objPos - objPosOld
                 objRotation = objOrientation - objOrientationOld
-                reward = objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.1*np.abs(objRotation)
+                reward = 2 * objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.05*np.abs(objRotation)
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
@@ -263,7 +224,3 @@ class KilobotsObjectMazeSimulator:
                 S_[sampleIdx, :] = s_
 
         return S, A, R, S_
-
-# if __name__ == '__main__':
-#     sim = KilobotsObjectMazeSimulator()
-#     sim.run()
