@@ -10,7 +10,7 @@ class Object:
     HALF_W = 0.075
     HALF_H = 0.075
 
-    DENSITY = 0.1
+    DENSITY = 2
     FRICTION = 1.0
     RESTITUTION = 0.0
 
