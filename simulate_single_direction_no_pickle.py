@@ -28,8 +28,9 @@ class KilobotsObjectMazeSimulator:
     SCALE_REAL_TO_SIM = 10  # for numerical reasons
     SCALE_REAL_TO_VIS = HEIGHT  # 1m = HEIGHT pixels
 
-    def __init__(self):
-        self.use_gui = True
+    def __init__(self, use_gui):
+
+        self.use_gui = use_gui
 
         if self.use_gui == True:
             # pygame
