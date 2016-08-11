@@ -214,7 +214,7 @@ class KilobotsObjectMazeSimulator:
                 # reward: learn to move the object to the right
                 objMovement = objPos - objPosOld
                 objRotation = objOrientation - objOrientationOld
-                reward = 2 * objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.05*np.abs(objRotation)
+                reward = 2 * objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.05*np.abs(objRotation) - 0.5 * np.log(0.01 + np.abs(s[0,1]))
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
