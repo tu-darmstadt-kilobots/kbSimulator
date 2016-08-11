@@ -9,7 +9,7 @@
 # for visualization
 import pygame
 from pygame.locals import *
-from pygame import draw, gfxdraw
+from pygame import draw, gfxdraw, mouse
 
 # Box2D handles the physics
 import Box2D
@@ -41,14 +41,14 @@ world = world(gravity=(0, 0), doSleep=True)
 
 # add the labyrinth and object to the world
 labyrinth = Labyrinth(world, SCALE_REAL_TO_SIM, SCALE_REAL_TO_VIS)
-push_object = Object(world, SCALE_REAL_TO_SIM, SCALE_REAL_TO_VIS, (1.25, 0.75))
+push_object = Object(world, SCALE_REAL_TO_SIM, SCALE_REAL_TO_VIS, (1.25, 0.75),'quad')
 
 # environment
 env = {'light_pos': array([1.75, 0.75]).reshape(1, 2)}
 
 # add some kilobots with Phototaxis behavior
 kilobots = []
-for i in range(100):
+for i in range(25):
     x = random.random() * 0.5 + 1.0
     y = random.random() * 0.5 + 0.5
     kilobots += [Phototaxisbot(world, SCALE_REAL_TO_SIM, SCALE_REAL_TO_VIS,
@@ -59,11 +59,16 @@ for i in range(100):
 running = True
 paused = False
 curr_time = 0
-time_step = 0.1
+time_step = 1
 
 while running:
     light_pos = env['light_pos']
 
+    m = mouse.get_pos()
+    mx = ((m[0])*1.0/SCALE_REAL_TO_VIS)
+    my = ((SCALE_REAL_TO_VIS-m[1])*1.0/SCALE_REAL_TO_VIS)
+    light_pos[0, 0] = mx
+    light_pos[0, 1] = my
     # event queue
     for event in pygame.event.get():
         if event.type == QUIT or \
@@ -81,9 +86,9 @@ while running:
             elif event.key == K_SPACE:
                 paused = not paused
             elif event.key == K_PLUS:
-                time_step = time_step + 0.01
+                time_step = time_step * 1.1
             elif event.key == K_MINUS:
-                time_step = time_step - 0.01
+                time_step = time_step / 1.1
 
     env['light_pos'] = light_pos
 
@@ -114,7 +119,7 @@ while running:
 
     pygame.display.flip()
 
-    # limit speed (wait to get 60 updates/sec)
-    #clock.tick(60)
+    # limit speed (wait to get 200 updates/sec)
+    clock.tick(100)
 
 pygame.quit()
