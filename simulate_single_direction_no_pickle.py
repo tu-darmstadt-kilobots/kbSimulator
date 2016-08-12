@@ -41,7 +41,7 @@ class KilobotsObjectMazeSimulator:
 
         self.world = world(gravity=(0, 0), doSleep=True)
 
-    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean):
+    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean, reward_function):
             self.policy = policy #policyModule.fromSerializableDict(policyDict)
 
             # read parameters
@@ -55,10 +55,10 @@ class KilobotsObjectMazeSimulator:
             self.epsilon = epsilon
             self.useMean = useMean
 
-            S, A, R, S_ = self._generateSamples()
+            S, A, R, S_ = self._generateSamples(reward_function)
             return S, A, R, S_
 
-    def _generateSamples(self):
+    def _generateSamples(self, reward_function):
         # create kilobots
         self.kilobots = []
         for i in range(self.numKilobots):
@@ -215,6 +215,8 @@ class KilobotsObjectMazeSimulator:
                 objMovement = objPos - objPosOld
                 objRotation = objOrientation - objOrientationOld
                 reward = 2 * objMovement[0, 0] - 0.5 * np.abs(objMovement[0, 1]) - 0.05*np.abs(objRotation) - 0.5 * np.log(0.01 + np.abs(s[0,1]))
+                reward = reward_function(objMovement, objRotation, s)
+
 
                 # record sample
                 sampleIdx = ep * self.numStepsPerEpisode + step
