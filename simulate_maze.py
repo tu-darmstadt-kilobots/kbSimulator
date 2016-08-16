@@ -110,11 +110,14 @@ class KilobotsObjectMazeSimulator:
         lightPos = matrix([objStartX, objStartY])
 
         HALF_W = self.pushObject.HALF_W
+        start_angles = 2 * np.pi * np.random.randn(self.numKilobots)
 
         # kilobots start left of the object
         for (i, kilobot) in zip(range(self.numKilobots), self.kilobots):
-            x = objStartX - 2.0 * HALF_W + (1 + i / 4) * kilobotOffsets[i % 4, 0]
-            y = objStartY + (1 + i / 4) * kilobotOffsets[i % 4, 1]
+            #x = objStartX - 2.0 * HALF_W + (1 + i / 4) * kilobotOffsets[i % 4, 0]
+            #y = objStartY + (1 + i / 4) * kilobotOffsets[i % 4, 1]
+            x = objStartX + 1.1 * self.SCALE_REAL_TO_SIM * r * cos(start_angles[i])
+            y = objStartY+ 1.1 * self.SCALE_REAL_TO_SIM * r * sin(start_angles[i])
             kilobot.body.position = vec2(x, y) * self.SCALE_REAL_TO_SIM
 
         s = asmatrix(empty((1, 2 + 2 * self.numKilobots)))
