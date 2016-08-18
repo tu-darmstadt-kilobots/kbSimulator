@@ -41,7 +41,7 @@ class KilobotsObjectMazeSimulator:
 
         self.world = world(gravity=(0, 0), doSleep=True)
 
-    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean, reward_function):
+    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean, reward_function, samplingTypeRatio):
             self.policy = policy #policyModule.fromSerializableDict(policyDict)
 
             # read parameters
@@ -55,10 +55,10 @@ class KilobotsObjectMazeSimulator:
             self.epsilon = epsilon
             self.useMean = useMean
 
-            S, A, R, S_ = self._generateSamples(reward_function)
+            S, A, R, S_ = self._generateSamples(reward_function, samplingTypeRatio)
             return S, A, R, S_
 
-    def _generateSamples(self, reward_function):
+    def _generateSamples(self, reward_function, samplingTypeRatio):
         # create kilobots
         self.kilobots = []
         for i in range(self.numKilobots):
@@ -81,8 +81,10 @@ class KilobotsObjectMazeSimulator:
         # kilobots start in a circel around the object
         radius = 2.0 * self.pushObject.HALF_W
         A = linspace(0, 2 * math.pi, self.numEpisodes + 1)[0:self.numEpisodes]
-        startPositions = c_[objStartX + np.cos(A) * radius * 1.5*0,
-                            objStartY + np.sin(A) * radius * 1.5*0];
+
+        #let the light rotate around the object with alternating radius
+        startPositions = c_[objStartX + np.cos(A) * radius * (1.1 + np.random.rand()),
+                            objStartY + np.sin(A) * radius * (1.1 + np.random.rand())];
 
         radius = self.kilobots[0].RADIUS
         kilobotOffsets = array([[-radius, 0], [radius, 0], [0, radius], [0, -radius]])
@@ -100,18 +102,31 @@ class KilobotsObjectMazeSimulator:
                     self.SCALE_REAL_TO_SIM
             self.pushObject.body.angle = 0
 
-            # light starts in circel around the object
-            start = startPositions[ep, :]
+
+            #determine the sampling mode for this episode
+            spawnConcentrated = np.random.rand() < samplingTypeRatio
+
+            if spawnConcentrated:
+                # light starts in circel around the object
+                start = startPositions[ep, :]
+            else:
+                start = objStart
+
             lightPos = matrix(start)
 
             start_angles = 2 * np.pi * np.random.randn(self.numKilobots)
 
+
             # kilobots start at the light position in a fixed formation
             for (i, kilobot) in zip(range(self.numKilobots), self.kilobots):
-                #x = start[0] + (10 + i / 4) * kilobotOffsets[i % 4, 0] + 0.25*(random.random()-0.5)
-                #y = start[1] + (10 + i / 4) * kilobotOffsets[i % 4, 1] + 0.25*(random.random()-0.5)
-                x = start[0] + 1.25 * self.SCALE_REAL_TO_SIM * radius * cos(start_angles[i])
-                y = start[1] + 1.25 * self.SCALE_REAL_TO_SIM * radius * sin(start_angles[i])
+
+                if spawnConcentrated:
+                    x = start[0] + (10 + i / 4) * kilobotOffsets[i % 4, 0] + 0.25*(random.random()-0.5)
+                    y = start[1] + (10 + i / 4) * kilobotOffsets[i % 4, 1] + 0.25*(random.random()-0.5)
+                else:
+                    x = start[0] + 1.1 * self.SCALE_REAL_TO_SIM * radius * cos(start_angles[i])
+                    y = start[1] + 1.1 * self.SCALE_REAL_TO_SIM * radius * sin(start_angles[i])
+
                 kilobot.body.position = vec2(x, y) * self.SCALE_REAL_TO_SIM
 
             for step in range(self.numStepsPerEpisode):
