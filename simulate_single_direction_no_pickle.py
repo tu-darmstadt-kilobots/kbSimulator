@@ -41,7 +41,7 @@ class KilobotsObjectMazeSimulator:
 
         self.world = world(gravity=(0, 0), doSleep=True)
 
-    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean, reward_function, samplingTypeRatio):
+    def getSamples(self, policy, objectShape, numKilobots, numEpisodes, numStepsPerEpisode, stepsPerSec, epsilon, useMean, reward_function, samplingTypeRatio, iterationProgress):
             self.policy = policy #policyModule.fromSerializableDict(policyDict)
 
             # read parameters
@@ -55,10 +55,10 @@ class KilobotsObjectMazeSimulator:
             self.epsilon = epsilon
             self.useMean = useMean
 
-            S, A, R, S_ = self._generateSamples(reward_function, samplingTypeRatio)
+            S, A, R, S_ = self._generateSamples(reward_function, samplingTypeRatio, iterationProgress)
             return S, A, R, S_
 
-    def _generateSamples(self, reward_function, samplingTypeRatio):
+    def _generateSamples(self, reward_function, samplingTypeRatio, iterationProgress):
         # create kilobots
         self.kilobots = []
         for i in range(self.numKilobots):
@@ -83,8 +83,8 @@ class KilobotsObjectMazeSimulator:
         A = linspace(0, 2 * math.pi, self.numEpisodes + 1)[0:self.numEpisodes]
 
         #let the light rotate around the object with alternating radius
-        startPositions = c_[objStartX + np.cos(A) * radius * (1.1 + np.random.rand()),
-                            objStartY + np.sin(A) * radius * (1.1 + np.random.rand())];
+        startPositions = c_[objStartX + np.cos(A) * radius * (1.1 + iterationProgress),
+                            objStartY + np.sin(A) * radius * (1.1 + iterationProgress)];
 
         radius = self.kilobots[0].RADIUS
         kilobotOffsets = array([[-radius, 0], [radius, 0], [0, radius], [0, -radius]])
